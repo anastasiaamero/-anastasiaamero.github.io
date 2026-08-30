@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Retouch Clicky</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">rc</span>
+          <div>
+            <h1>retouch clicky</h1>
+            <p>быстрая ретушь фото прямо в браузере</p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <label class="file-button">
+            <input id="fileInput" type="file" accept="image/*" />
+            Открыть фото
+          </label>
+          <button id="resetBtn" type="button">Сбросить</button>
+          <button id="exportBtn" type="button" class="primary">Скачать</button>
+        </div>
+      </header>
+
+      <section class="workspace">
+        <aside class="tools-panel" aria-label="Инструменты ретуши">
+          <div class="panel-heading">
+            <span>инструменты</span>
+            <strong id="toolHint">двигай фото</strong>
+          </div>
+
+          <div class="tool-grid" role="group" aria-label="Выбор инструмента">
+            <button class="tool active" type="button" data-tool="pan">
+              <span class="tool-icon">↔</span>
+              <span>двигать</span>
+            </button>
+            <button class="tool" type="button" data-tool="heal">
+              <span class="tool-icon">✦</span>
+              <span>волшебная</span>
+            </button>
+            <button class="tool" type="button" data-tool="patch">
+              <span class="tool-icon">▣</span>
+              <span>заплатка</span>
+            </button>
+            <button class="tool" type="button" data-tool="clone">
+              <span class="tool-icon">◎</span>
+              <span>штамп</span>
+            </button>
+            <button class="tool" type="button" data-tool="smooth">
+              <span class="tool-icon">≈</span>
+              <span>смягчить</span>
+            </button>
+          </div>
+
+          <label class="control">
+            <span>Размер кисти</span>
+            <output id="brushSizeValue">34</output>
+            <input id="brushSize" type="range" min="6" max="120" value="34" />
+          </label>
+          <label class="control">
+            <span>Мягкость края</span>
+            <output id="softnessValue">72</output>
+            <input id="softness" type="range" min="0" max="100" value="72" />
+          </label>
+          <label class="control">
+            <span>Сила эффекта</span>
+            <output id="strengthValue">82</output>
+            <input id="strength" type="range" min="5" max="100" value="82" />
+          </label>
+
+          <div class="mini-actions">
+            <button id="undoBtn" type="button">Назад</button>
+            <button id="redoBtn" type="button">Вперед</button>
+          </div>
+
+          <div class="note-card">
+            <strong id="statusTitle">Фото еще не выбрано</strong>
+            <p id="statusText">Загрузи снимок, и холст сразу станет рабочим.</p>
+          </div>
+        </aside>
+
+        <section class="canvas-stage" aria-label="Холст редактора">
+          <div class="canvas-toolbar">
+            <div class="zoom-controls">
+              <button id="zoomOutBtn" type="button">-</button>
+              <span id="zoomLabel">100%</span>
+              <button id="zoomInBtn" type="button">+</button>
+              <button id="fitBtn" type="button">По размеру</button>
+            </div>
+            <div class="mode-tip" id="modeTip">перетащи фото сюда или нажми “Открыть фото”</div>
+          </div>
+          <div id="dropZone" class="canvas-wrap">
+            <canvas id="editorCanvas"></canvas>
+            <div id="brushCursor" class="brush-cursor" hidden></div>
+            <div id="emptyState" class="empty-state">
+              <div class="empty-face">^_^</div>
+              <h2>кинь сюда фото</h2>
+              <p>JPG, PNG или WebP. Все работает локально на твоем компьютере.</p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="adjust-panel" aria-label="Настройки цвета">
+          <div class="tabs" role="tablist" aria-label="Разделы коррекции">
+            <button class="tab active" type="button" data-tab="tone">Тон</button>
+            <button class="tab" type="button" data-tab="color">Цвет</button>
+            <button class="tab" type="button" data-tab="selective">Выборочно</button>
+            <button class="tab" type="button" data-tab="grain">Зерно</button>
+          </div>
+
+          <div class="tab-panel active" data-panel="tone">
+            <div class="curve-box">
+              <canvas id="curveCanvas" width="260" height="170"></canvas>
+              <div class="curve-buttons">
+                <button type="button" data-curve="soft">мягче</button>
+                <button type="button" data-curve="lift">светлее</button>
+                <button type="button" data-curve="contrast">контраст</button>
+              </div>
+            </div>
+            <label class="control">
+              <span>Экспозиция</span>
+              <output id="exposureValue">0</output>
+              <input id="exposure" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Контраст</span>
+              <output id="contrastValue">0</output>
+              <input id="contrast" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Света</span>
+              <output id="highlightsValue">0</output>
+              <input id="highlights" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Тени</span>
+              <output id="shadowsValue">0</output>
+              <input id="shadows" type="range" min="-100" max="100" value="0" />
+            </label>
+          </div>
+
+          <div class="tab-panel" data-panel="color">
+            <label class="control">
+              <span>Температура</span>
+              <output id="temperatureValue">0</output>
+              <input id="temperature" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Оттенок</span>
+              <output id="tintValue">0</output>
+              <input id="tint" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Насыщенность</span>
+              <output id="saturationValue">0</output>
+              <input id="saturation" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Сочность</span>
+              <output id="vibranceValue">0</output>
+              <input id="vibrance" type="range" min="-100" max="100" value="0" />
+            </label>
+          </div>
+
+          <div class="tab-panel" data-panel="selective">
+            <label class="select-block">
+              <span>Цвет для коррекции</span>
+              <select id="colorRange">
+                <option value="reds">Красные</option>
+                <option value="oranges">Оранжевые</option>
+                <option value="yellows">Желтые</option>
+                <option value="greens">Зеленые</option>
+                <option value="blues">Синие</option>
+                <option value="magentas">Пурпурные</option>
+              </select>
+            </label>
+            <label class="control">
+              <span>Сдвиг оттенка</span>
+              <output id="selectiveHueValue">0</output>
+              <input id="selectiveHue" type="range" min="-60" max="60" value="0" />
+            </label>
+            <label class="control">
+              <span>Насыщенность цвета</span>
+              <output id="selectiveSatValue">0</output>
+              <input id="selectiveSat" type="range" min="-100" max="100" value="0" />
+            </label>
+            <label class="control">
+              <span>Яркость цвета</span>
+              <output id="selectiveLightValue">0</output>
+              <input id="selectiveLight" type="range" min="-100" max="100" value="0" />
+            </label>
+            <button id="applyAdjustBtn" type="button" class="wide-button">Закрепить коррекцию</button>
+          </div>
+
+          <div class="tab-panel" data-panel="grain">
+            <label class="control">
+              <span>Светлое зерно</span>
+              <output id="grainLightValue">35</output>
+              <input id="grainLight" type="range" min="0" max="100" value="35" />
+            </label>
+            <label class="control">
+              <span>Темное зерно</span>
+              <output id="grainDarkValue">35</output>
+              <input id="grainDark" type="range" min="0" max="100" value="35" />
+            </label>
+            <label class="control">
+              <span>Размер зерна</span>
+              <output id="grainSizeValue">2</output>
+              <input id="grainSize" type="range" min="1" max="12" value="2" />
+            </label>
+            <label class="control">
+              <span>Прозрачность</span>
+              <output id="grainOpacityValue">0</output>
+              <input id="grainOpacity" type="range" min="0" max="100" value="0" />
+            </label>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
