@@ -1029,24 +1029,30 @@ function updateGuidance(custom) {
 }
 
 function updateCursor() {
+  const patchPicking = state.hasImage && state.tool === "patch" && !state.spaceDown && !state.panning && !state.patchDrag;
   const brushing = state.hasImage && isBrushTool() && !state.spaceDown && !state.panning;
-  canvas.classList.toggle("brushing", brushing);
+  const customCursor = brushing || patchPicking;
+  canvas.classList.toggle("brushing", customCursor);
   canvas.classList.toggle("panning", state.panning);
   brushCursor.classList.toggle("source-pick", brushing && state.tool === "clone" && state.altDown);
-  if (!brushing) brushCursor.hidden = true;
+  brushCursor.classList.toggle("patch-pen", patchPicking);
+  if (!customCursor) brushCursor.hidden = true;
 }
 
 function updateBrushCursor(event, point) {
+  const patchPicking = state.hasImage && state.tool === "patch" && !state.spaceDown && !state.panning && !state.patchDrag;
   const brushing = state.hasImage && isBrushTool() && !state.spaceDown && !state.panning;
-  if (!brushing || !event || !point || !insideImage(point.x, point.y)) {
+  const customCursor = brushing || patchPicking;
+  if (!customCursor || !event || !point || !insideImage(point.x, point.y)) {
     brushCursor.hidden = true;
     return;
   }
   const rect = dropZone.getBoundingClientRect();
-  const size = Math.max(8, state.brush * state.zoom);
+  const size = patchPicking ? 34 : Math.max(8, state.brush * state.zoom);
   const sourcePick = state.tool === "clone" && (state.altDown || event.altKey);
   brushCursor.hidden = false;
   brushCursor.classList.toggle("source-pick", sourcePick);
+  brushCursor.classList.toggle("patch-pen", patchPicking);
   brushCursor.style.width = `${size}px`;
   brushCursor.style.height = `${size}px`;
   brushCursor.style.transform = `translate(${event.clientX - rect.left - size / 2}px, ${event.clientY - rect.top - size / 2}px)`;

@@ -387,6 +387,39 @@ output {
   display: block;
 }
 
+.brush-cursor.patch-pen {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.brush-cursor.patch-pen::before {
+  content: "✒";
+  display: block;
+  width: auto;
+  height: auto;
+  left: 50%;
+  top: 50%;
+  color: var(--accent);
+  background: transparent;
+  border-radius: 0;
+  font-size: 24px;
+  line-height: 1;
+  text-shadow:
+    0 1px 0 #fffaf0,
+    1px 0 0 #fffaf0,
+    0 -1px 0 #fffaf0,
+    -1px 0 0 #fffaf0,
+    0 2px 8px rgba(37, 34, 31, 0.38);
+  box-shadow: none;
+}
+
+.brush-cursor.patch-pen::after {
+  display: none;
+}
+
 .empty-state {
   position: absolute;
   inset: 24px;
