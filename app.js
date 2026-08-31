@@ -39,8 +39,10 @@ const state = {
   stageWidth: 0,
   stageHeight: 0,
   spaceDown: false,
+  altDown: false,
   panStart: null,
   cloneSource: null,
+  cloneDelta: null,
   patchSource: null,
   lastPoint: null,
   undo: [],
@@ -70,7 +72,7 @@ const toolCopy = {
   pan: ["двигай фото", "Перетаскивай фото мышью. Колесо приближает к месту под курсором."],
   heal: ["кликни по прыщику", "Волшебная кисть берет кожу вокруг пятна и мягко смешивает ее в центре."],
   patch: ["сначала выбери чистый участок", "Первый клик выбирает чистую кожу, второй переносит ее как заплатку."],
-  clone: ["сначала выбери источник", "Первый клик задает источник штампа, затем можно рисовать по нужному месту."],
+  clone: ["Alt + клик: источник", "Зажми Alt/Option и кликни по чистому участку, потом рисуй штампом по нужному месту."],
   smooth: ["проведи по коже", "Смягчение аккуратно размывает мелкую текстуру внутри кисти."]
 };
 
@@ -173,6 +175,15 @@ canvas.addEventListener("pointerdown", (event) => {
     return;
   }
   if (!insideImage(point.x, point.y)) return;
+  if (state.tool === "clone" && event.altKey) {
+    setCloneSource(point);
+    updateBrushCursor(event, point);
+    return;
+  }
+  if (state.tool === "clone" && !state.cloneSource) {
+    setCloneSource(point);
+    return;
+  }
   state.painting = true;
   state.lastPoint = point;
   pushUndo();
@@ -232,16 +243,25 @@ document.querySelector("#zoomInBtn").addEventListener("click", () => setZoom(sta
 document.querySelector("#zoomOutBtn").addEventListener("click", () => setZoom(state.zoom / 1.18));
 document.querySelector("#fitBtn").addEventListener("click", fitToScreen);
 window.addEventListener("keydown", (event) => {
-  if (event.code !== "Space" || event.target.matches("input, select, button")) return;
-  event.preventDefault();
-  state.spaceDown = true;
+  if (event.target.matches("input, select, button")) return;
+  if (event.code === "Space") {
+    event.preventDefault();
+    state.spaceDown = true;
+  }
+  if (event.key === "Alt") {
+    state.altDown = true;
+  }
   updateCursor();
 });
 window.addEventListener("keyup", (event) => {
-  if (event.code !== "Space") return;
-  state.spaceDown = false;
-  state.panning = false;
-  state.panStart = null;
+  if (event.code === "Space") {
+    state.spaceDown = false;
+    state.panning = false;
+    state.panStart = null;
+  }
+  if (event.key === "Alt") {
+    state.altDown = false;
+  }
   updateCursor();
 });
 window.addEventListener("resize", () => {
@@ -360,8 +380,7 @@ function useTool(point, firstTouch) {
     state.patchSource = null;
   } else if (state.tool === "clone") {
     if (!state.cloneSource) {
-      state.cloneSource = point;
-      updateGuidance("рисуй там, куда перенести текстуру");
+      setCloneSource(point);
       return;
     }
     cloneAt(state.cloneSource, point, firstTouch);
@@ -372,6 +391,14 @@ function useTool(point, firstTouch) {
   }
   state.adjustmentsDirty = true;
   requestRender();
+}
+
+function setCloneSource(point) {
+  state.cloneSource = point;
+  state.cloneDelta = null;
+  updateGuidance("источник штампа выбран");
+  statusTitle.textContent = "Источник штампа выбран";
+  statusText.textContent = "Теперь рисуй по месту, которое нужно перекрыть. Чтобы сменить источник, снова зажми Alt/Option и кликни по чистому участку.";
 }
 
 function pushUndo() {
@@ -843,6 +870,7 @@ function updateCursor() {
   const brushing = state.hasImage && state.tool !== "pan" && !state.spaceDown && !state.panning;
   canvas.classList.toggle("brushing", brushing);
   canvas.classList.toggle("panning", state.panning);
+  brushCursor.classList.toggle("source-pick", brushing && state.tool === "clone" && state.altDown);
   if (!brushing) brushCursor.hidden = true;
 }
 
@@ -854,7 +882,9 @@ function updateBrushCursor(event, point) {
   }
   const rect = dropZone.getBoundingClientRect();
   const size = Math.max(8, state.brush * state.zoom);
+  const sourcePick = state.tool === "clone" && (state.altDown || event.altKey);
   brushCursor.hidden = false;
+  brushCursor.classList.toggle("source-pick", sourcePick);
   brushCursor.style.width = `${size}px`;
   brushCursor.style.height = `${size}px`;
   brushCursor.style.transform = `translate(${event.clientX - rect.left - size / 2}px, ${event.clientY - rect.top - size / 2}px)`;

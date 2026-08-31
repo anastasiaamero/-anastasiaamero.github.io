@@ -352,6 +352,41 @@ output {
   transform: translate(-50%, -50%);
 }
 
+.brush-cursor::before,
+.brush-cursor::after {
+  content: "";
+  position: absolute;
+  display: none;
+  left: 50%;
+  top: 50%;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(255, 252, 244, 0.95);
+  transform: translate(-50%, -50%);
+}
+
+.brush-cursor::before {
+  width: 18px;
+  height: 4px;
+}
+
+.brush-cursor::after {
+  width: 4px;
+  height: 18px;
+}
+
+.brush-cursor.source-pick {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 2px rgba(255, 252, 244, 0.95),
+    0 0 0 1px rgba(37, 34, 31, 0.9);
+}
+
+.brush-cursor.source-pick::before,
+.brush-cursor.source-pick::after {
+  display: block;
+}
+
 .empty-state {
   position: absolute;
   inset: 24px;
