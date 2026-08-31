@@ -43,7 +43,9 @@ const state = {
   panStart: null,
   cloneSource: null,
   cloneDelta: null,
-  patchSource: null,
+  patchPath: [],
+  patchSelection: null,
+  patchDrag: null,
   lastPoint: null,
   undo: [],
   redo: [],
@@ -71,7 +73,7 @@ const state = {
 const toolCopy = {
   pan: ["двигай фото", "Перетаскивай фото мышью. Колесо приближает к месту под курсором."],
   heal: ["кликни по прыщику", "Волшебная кисть берет кожу вокруг пятна и мягко смешивает ее в центре."],
-  patch: ["сначала выбери чистый участок", "Первый клик выбирает чистую кожу, второй переносит ее как заплатку."],
+  patch: ["обведи зону", "Обведи участок пунктиром, затем перетащи выделение на чистое место для замены."],
   clone: ["Alt + клик: источник", "Зажми Alt/Option и кликни по чистому участку, потом рисуй штампом по нужному месту."],
   smooth: ["проведи по коже", "Смягчение аккуратно размывает мелкую текстуру внутри кисти."]
 };
@@ -89,8 +91,8 @@ document.querySelectorAll(".tool").forEach((button) => {
   button.addEventListener("click", () => {
     state.tool = button.dataset.tool;
     state.cloneSource = null;
-    state.patchSource = null;
     state.cloneDelta = null;
+    clearPatchSelection();
     document.querySelectorAll(".tool").forEach((item) => item.classList.remove("active"));
     button.classList.add("active");
     updateGuidance();
@@ -175,6 +177,20 @@ canvas.addEventListener("pointerdown", (event) => {
     return;
   }
   if (!insideImage(point.x, point.y)) return;
+  if (state.tool === "patch") {
+    if (state.patchSelection && pointInPatchSelection(point)) {
+      state.patchDrag = {
+        start: point,
+        dx: 0,
+        dy: 0
+      };
+      updateGuidance("тащи на чистый участок");
+      requestRender();
+      return;
+    }
+    beginPatchSelection(point);
+    return;
+  }
   if (state.tool === "clone" && event.altKey) {
     setCloneSource(point);
     updateBrushCursor(event, point);
@@ -201,13 +217,28 @@ canvas.addEventListener("pointermove", (event) => {
     updateBrushCursor(event, eventToImage(event));
     return;
   }
+  if (state.patchDrag) {
+    state.patchDrag.dx = point.x - state.patchDrag.start.x;
+    state.patchDrag.dy = point.y - state.patchDrag.start.y;
+    requestRender();
+    return;
+  }
   if (!state.painting) return;
   if (!insideImage(point.x, point.y)) return;
+  if (state.tool === "patch") {
+    updatePatchSelection(point);
+    return;
+  }
   useTool(point, false);
   state.lastPoint = point;
 });
 
 canvas.addEventListener("pointerup", () => {
+  if (state.patchDrag) {
+    finishPatchDrag();
+  } else if (state.tool === "patch" && state.painting) {
+    finishPatchSelection();
+  }
   state.painting = false;
   state.panning = false;
   state.panStart = null;
@@ -216,6 +247,8 @@ canvas.addEventListener("pointerup", () => {
 });
 
 canvas.addEventListener("pointercancel", () => {
+  state.patchDrag = null;
+  state.patchPath = [];
   state.painting = false;
   state.panning = false;
   state.panStart = null;
@@ -370,15 +403,7 @@ function insideImage(x, y) {
 
 function useTool(point, firstTouch) {
   if (state.tool === "pan") return;
-  if (state.tool === "patch") {
-    if (!state.patchSource) {
-      state.patchSource = point;
-      updateGuidance("теперь кликни по месту для заплатки");
-      return;
-    }
-    patchAt(state.patchSource, point);
-    state.patchSource = null;
-  } else if (state.tool === "clone") {
+  if (state.tool === "clone") {
     if (!state.cloneSource) {
       setCloneSource(point);
       return;
@@ -399,6 +424,136 @@ function setCloneSource(point) {
   updateGuidance("источник штампа выбран");
   statusTitle.textContent = "Источник штампа выбран";
   statusText.textContent = "Теперь рисуй по месту, которое нужно перекрыть. Чтобы сменить источник, снова зажми Alt/Option и кликни по чистому участку.";
+}
+
+function beginPatchSelection(point) {
+  state.painting = true;
+  state.patchSelection = null;
+  state.patchPath = [point];
+  updateGuidance("обведи зону");
+  statusTitle.textContent = "Рисуй выделение";
+  statusText.textContent = "Обведи участок, который хочешь заменить. Когда отпустишь мышь, выделение станет пунктиром.";
+  requestRender();
+}
+
+function updatePatchSelection(point) {
+  const last = state.patchPath[state.patchPath.length - 1];
+  if (last && Math.hypot(point.x - last.x, point.y - last.y) < 2) return;
+  state.patchPath.push(point);
+  requestRender();
+}
+
+function finishPatchSelection() {
+  if (state.patchPath.length < 6) {
+    clearPatchSelection();
+    updateGuidance("обведи зону");
+    return;
+  }
+  state.patchSelection = {
+    path: state.patchPath.slice(),
+    bounds: getPathBounds(state.patchPath)
+  };
+  state.patchPath = [];
+  updateGuidance("перетащи выделение");
+  statusTitle.textContent = "Выделение готово";
+  statusText.textContent = "Потяни пунктир на чистый участок, которым хочешь заменить выбранную область.";
+  requestRender();
+}
+
+function finishPatchDrag() {
+  const drag = state.patchDrag;
+  state.patchDrag = null;
+  if (!state.patchSelection || Math.hypot(drag.dx, drag.dy) < 2) {
+    requestRender();
+    return;
+  }
+  pushUndo();
+  applyPatchSelection(state.patchSelection, drag.dx, drag.dy);
+  clearPatchSelection();
+  state.adjustmentsDirty = true;
+  updateGuidance("обведи новую зону");
+  requestRender();
+}
+
+function clearPatchSelection() {
+  state.patchPath = [];
+  state.patchSelection = null;
+  state.patchDrag = null;
+}
+
+function getPathBounds(path) {
+  const xs = path.map((point) => point.x);
+  const ys = path.map((point) => point.y);
+  const padding = Math.max(2, state.brush * 0.18);
+  return {
+    left: clamp(Math.floor(Math.min(...xs) - padding), 0, working.width - 1),
+    top: clamp(Math.floor(Math.min(...ys) - padding), 0, working.height - 1),
+    right: clamp(Math.ceil(Math.max(...xs) + padding), 0, working.width - 1),
+    bottom: clamp(Math.ceil(Math.max(...ys) + padding), 0, working.height - 1)
+  };
+}
+
+function pointInPatchSelection(point) {
+  if (!state.patchSelection) return false;
+  const path = state.patchSelection.path;
+  let inside = false;
+  for (let i = 0, j = path.length - 1; i < path.length; j = i, i += 1) {
+    const xi = path[i].x;
+    const yi = path[i].y;
+    const xj = path[j].x;
+    const yj = path[j].y;
+    const intersects = ((yi > point.y) !== (yj > point.y))
+      && (point.x < ((xj - xi) * (point.y - yi)) / (yj - yi) + xi);
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+function applyPatchSelection(selection, dx, dy) {
+  const bounds = selection.bounds;
+  const width = bounds.right - bounds.left + 1;
+  const height = bounds.bottom - bounds.top + 1;
+  const target = wctx.getImageData(bounds.left, bounds.top, width, height);
+  const sourceLeft = clamp(Math.round(bounds.left + dx), 0, working.width - 1);
+  const sourceTop = clamp(Math.round(bounds.top + dy), 0, working.height - 1);
+  const sourceRight = clamp(sourceLeft + width - 1, 0, working.width - 1);
+  const sourceBottom = clamp(sourceTop + height - 1, 0, working.height - 1);
+  const source = wctx.getImageData(sourceLeft, sourceTop, sourceRight - sourceLeft + 1, sourceBottom - sourceTop + 1);
+  const mask = createPatchMask(selection, bounds, width, height);
+  const originalTarget = new Uint8ClampedArray(target.data);
+  const strength = state.strength / 100;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = (y * width + x) * 4;
+      const alpha = (mask.data[idx + 3] / 255) * strength;
+      if (!alpha) continue;
+      const sx = clamp(x, 0, source.width - 1);
+      const sy = clamp(y, 0, source.height - 1);
+      const sidx = (sy * source.width + sx) * 4;
+      target.data[idx] = mix(originalTarget[idx], source.data[sidx], alpha);
+      target.data[idx + 1] = mix(originalTarget[idx + 1], source.data[sidx + 1], alpha);
+      target.data[idx + 2] = mix(originalTarget[idx + 2], source.data[sidx + 2], alpha);
+    }
+  }
+  wctx.putImageData(target, bounds.left, bounds.top);
+}
+
+function createPatchMask(selection, bounds, width, height) {
+  const mask = document.createElement("canvas");
+  mask.width = width;
+  mask.height = height;
+  const maskCtx = mask.getContext("2d");
+  maskCtx.fillStyle = "#000";
+  maskCtx.beginPath();
+  selection.path.forEach((point, index) => {
+    const x = point.x - bounds.left;
+    const y = point.y - bounds.top;
+    if (index === 0) maskCtx.moveTo(x, y);
+    else maskCtx.lineTo(x, y);
+  });
+  maskCtx.closePath();
+  maskCtx.fill();
+  return maskCtx.getImageData(0, 0, width, height);
 }
 
 function pushUndo() {
@@ -598,6 +753,7 @@ function render() {
   ctx.scale(state.zoom, state.zoom);
   ctx.drawImage(adjusted, 0, 0);
   ctx.restore();
+  drawPatchOverlay();
   zoomLabel.textContent = `${Math.round((state.zoom / state.fitZoom) * 100)}%`;
   drawCurve();
   updateCursor();
@@ -867,7 +1023,7 @@ function updateGuidance(custom) {
 }
 
 function updateCursor() {
-  const brushing = state.hasImage && state.tool !== "pan" && !state.spaceDown && !state.panning;
+  const brushing = state.hasImage && isBrushTool() && !state.spaceDown && !state.panning;
   canvas.classList.toggle("brushing", brushing);
   canvas.classList.toggle("panning", state.panning);
   brushCursor.classList.toggle("source-pick", brushing && state.tool === "clone" && state.altDown);
@@ -875,7 +1031,7 @@ function updateCursor() {
 }
 
 function updateBrushCursor(event, point) {
-  const brushing = state.hasImage && state.tool !== "pan" && !state.spaceDown && !state.panning;
+  const brushing = state.hasImage && isBrushTool() && !state.spaceDown && !state.panning;
   if (!brushing || !event || !point || !insideImage(point.x, point.y)) {
     brushCursor.hidden = true;
     return;
@@ -888,6 +1044,60 @@ function updateBrushCursor(event, point) {
   brushCursor.style.width = `${size}px`;
   brushCursor.style.height = `${size}px`;
   brushCursor.style.transform = `translate(${event.clientX - rect.left - size / 2}px, ${event.clientY - rect.top - size / 2}px)`;
+}
+
+function isBrushTool() {
+  return state.tool === "heal" || state.tool === "clone" || state.tool === "smooth";
+}
+
+function drawPatchOverlay() {
+  if (state.tool !== "patch") return;
+  const livePath = state.patchPath.length ? state.patchPath : null;
+  const selectedPath = state.patchSelection ? state.patchSelection.path : null;
+  if (!livePath && !selectedPath) return;
+  ctx.save();
+  ctx.lineWidth = 2;
+  ctx.setLineDash([8, 6]);
+  ctx.strokeStyle = "#25221f";
+  ctx.fillStyle = "rgba(233, 93, 60, 0.12)";
+  if (livePath) drawImagePath(livePath, 0, 0, false);
+  if (selectedPath) {
+    drawImagePath(selectedPath, 0, 0, true);
+    if (state.patchDrag) {
+      ctx.strokeStyle = "#e95d3c";
+      ctx.fillStyle = "rgba(233, 93, 60, 0.18)";
+      drawImagePath(selectedPath, state.patchDrag.dx, state.patchDrag.dy, true);
+      drawPatchLink(state.patchSelection.bounds, state.patchDrag.dx, state.patchDrag.dy);
+    }
+  }
+  ctx.restore();
+}
+
+function drawImagePath(path, dx, dy, closed) {
+  ctx.beginPath();
+  path.forEach((point, index) => {
+    const screenX = state.offsetX + (point.x + dx) * state.zoom;
+    const screenY = state.offsetY + (point.y + dy) * state.zoom;
+    if (index === 0) ctx.moveTo(screenX, screenY);
+    else ctx.lineTo(screenX, screenY);
+  });
+  if (closed) {
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.stroke();
+}
+
+function drawPatchLink(bounds, dx, dy) {
+  const fromX = state.offsetX + ((bounds.left + bounds.right) / 2) * state.zoom;
+  const fromY = state.offsetY + ((bounds.top + bounds.bottom) / 2) * state.zoom;
+  const toX = state.offsetX + ((bounds.left + bounds.right) / 2 + dx) * state.zoom;
+  const toY = state.offsetY + ((bounds.top + bounds.bottom) / 2 + dy) * state.zoom;
+  ctx.setLineDash([3, 7]);
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
 }
 
 function clamp(value, min, max) {
