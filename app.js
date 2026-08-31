@@ -277,6 +277,12 @@ document.querySelector("#zoomOutBtn").addEventListener("click", () => setZoom(st
 document.querySelector("#fitBtn").addEventListener("click", fitToScreen);
 window.addEventListener("keydown", (event) => {
   if (event.target.matches("input, select, button")) return;
+  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "z") {
+    event.preventDefault();
+    if (event.shiftKey) redo();
+    else undo();
+    return;
+  }
   if (event.code === "Space") {
     event.preventDefault();
     state.spaceDown = true;
