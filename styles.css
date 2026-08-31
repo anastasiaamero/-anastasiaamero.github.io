@@ -544,7 +544,9 @@ select {
   }
 
   .app-shell {
-    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 6px;
     gap: 8px;
   }
 
@@ -556,116 +558,184 @@ select {
   }
 
   .topbar {
-    position: sticky;
-    top: 8px;
-    z-index: 4;
+    order: 2;
+    position: static;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
+    min-height: 0;
+    padding: 10px;
     border-radius: 10px;
+  }
+
+  .brand {
+    gap: 9px;
+  }
+
+  .brand-mark {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+
+  h1 {
+    font-size: 20px;
+  }
+
+  .brand p {
+    display: none;
   }
 
   .top-actions {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: 8px;
   }
 
   .file-button,
   .top-actions button {
-    min-height: 44px;
+    min-height: 42px;
   }
 
   .primary {
     grid-column: 1 / -1;
+    min-height: 50px;
+  }
+
+  .workspace {
+    order: 1;
+    gap: 8px;
   }
 
   .canvas-stage {
     order: 1;
-    min-height: 68dvh;
+    min-height: 74dvh;
+    border-radius: 10px;
   }
 
   .tools-panel {
     order: 2;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
   }
 
   .adjust-panel {
     order: 3;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 10px;
   }
 
   .canvas-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
     min-height: auto;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px;
   }
 
   .zoom-controls {
     display: grid;
-    grid-template-columns: 44px 64px 44px 1fr;
+    grid-template-columns: 40px 58px 40px 1fr;
     width: 100%;
   }
 
   .zoom-controls button {
-    min-height: 44px;
+    min-height: 40px;
   }
 
   .mode-tip {
     font-size: 12px;
+    line-height: 1.25;
   }
 
   .canvas-wrap {
-    min-height: 58dvh;
+    min-height: 64dvh;
     border-radius: 0 0 10px 10px;
     touch-action: none;
   }
 
+  .panel-heading {
+    align-items: center;
+  }
+
+  .panel-heading strong {
+    max-width: 48%;
+    font-size: 13px;
+    line-height: 1.15;
+  }
+
   .tool-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
   }
 
   .tool {
-    min-height: 82px;
+    min-height: 64px;
+    padding: 6px 4px;
+    font-size: 11px;
+    line-height: 1.05;
+  }
+
+  .tool-icon {
+    font-size: 18px;
   }
 
   .control {
-    font-size: 15px;
-    gap: 10px;
+    font-size: 14px;
+    gap: 7px 9px;
   }
 
   .control input {
-    min-height: 36px;
+    min-height: 28px;
   }
 
   output {
-    min-width: 44px;
+    min-width: 38px;
     font-size: 14px;
+  }
+
+  .mini-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .note-card {
+    margin-top: 0;
+    padding: 10px;
+  }
+
+  .note-card p {
+    font-size: 12px;
   }
 
   .tab-panel.active {
     display: flex;
+    gap: 10px;
   }
 
   .tabs {
-    position: sticky;
-    top: 96px;
-    z-index: 3;
-    grid-template-columns: repeat(2, 1fr);
+    position: static;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
   }
 
   .tab {
-    min-height: 42px;
-    font-size: 14px;
+    min-height: 38px;
+    font-size: 12px;
   }
 
   #curveCanvas {
-    height: 150px;
+    height: 122px;
   }
 
   .empty-state {
-    inset: 18px;
+    inset: 12px;
   }
 
   .empty-state h2 {
-    font-size: 30px;
+    font-size: 26px;
   }
 }
 
