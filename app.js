@@ -1068,24 +1068,37 @@ function drawPatchOverlay() {
   const selectedPath = state.patchSelection ? state.patchSelection.path : null;
   if (!livePath && !selectedPath) return;
   ctx.save();
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 6]);
-  ctx.strokeStyle = "#25221f";
-  ctx.fillStyle = "rgba(233, 93, 60, 0.12)";
-  if (livePath) drawImagePath(livePath, 0, 0, false);
+  if (livePath) drawImagePath(livePath, 0, 0, false, "#fffaf0", "#25221f", "rgba(233, 93, 60, 0.08)");
   if (selectedPath) {
-    drawImagePath(selectedPath, 0, 0, true);
+    drawImagePath(selectedPath, 0, 0, true, "#fffaf0", "#25221f", "rgba(255, 250, 240, 0.22)");
     if (state.patchDrag) {
-      ctx.strokeStyle = "#e95d3c";
-      ctx.fillStyle = "rgba(233, 93, 60, 0.18)";
-      drawImagePath(selectedPath, state.patchDrag.dx, state.patchDrag.dy, true);
+      drawImagePath(selectedPath, state.patchDrag.dx, state.patchDrag.dy, true, "#fffaf0", "#e95d3c", "rgba(233, 93, 60, 0.24)");
       drawPatchLink(state.patchSelection.bounds, state.patchDrag.dx, state.patchDrag.dy);
     }
   }
   ctx.restore();
 }
 
-function drawImagePath(path, dx, dy, closed) {
+function drawImagePath(path, dx, dy, closed, halo, stroke, fill) {
+  ctx.fillStyle = fill;
+  traceImagePath(path, dx, dy);
+  if (closed) {
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.setLineDash([]);
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = halo;
+  ctx.stroke();
+  ctx.setLineDash([9, 5]);
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = stroke;
+  traceImagePath(path, dx, dy);
+  if (closed) ctx.closePath();
+  ctx.stroke();
+}
+
+function traceImagePath(path, dx, dy) {
   ctx.beginPath();
   path.forEach((point, index) => {
     const screenX = state.offsetX + (point.x + dx) * state.zoom;
@@ -1093,11 +1106,6 @@ function drawImagePath(path, dx, dy, closed) {
     if (index === 0) ctx.moveTo(screenX, screenY);
     else ctx.lineTo(screenX, screenY);
   });
-  if (closed) {
-    ctx.closePath();
-    ctx.fill();
-  }
-  ctx.stroke();
 }
 
 function drawPatchLink(bounds, dx, dy) {
@@ -1105,7 +1113,16 @@ function drawPatchLink(bounds, dx, dy) {
   const fromY = state.offsetY + ((bounds.top + bounds.bottom) / 2) * state.zoom;
   const toX = state.offsetX + ((bounds.left + bounds.right) / 2 + dx) * state.zoom;
   const toY = state.offsetY + ((bounds.top + bounds.bottom) / 2 + dy) * state.zoom;
-  ctx.setLineDash([3, 7]);
+  ctx.setLineDash([4, 7]);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = "#fffaf0";
+  ctx.beginPath();
+  ctx.moveTo(fromX, fromY);
+  ctx.lineTo(toX, toY);
+  ctx.stroke();
+  ctx.setLineDash([2, 7]);
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = "#e95d3c";
   ctx.beginPath();
   ctx.moveTo(fromX, fromY);
   ctx.lineTo(toX, toY);
