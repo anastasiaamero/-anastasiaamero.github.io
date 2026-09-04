@@ -432,13 +432,24 @@ output {
   text-align: center;
 }
 
-.empty-face {
-  font-size: 42px;
-}
-
 .empty-state h2 {
   font-size: 34px;
   letter-spacing: 0;
+}
+
+.empty-upload {
+  display: inline-grid;
+  min-height: 54px;
+  place-items: center;
+  padding: 0 22px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--accent);
+  color: #fffaf0;
+  font-size: 18px;
+  font-weight: 900;
+  box-shadow: 4px 4px 0 var(--ink);
+  cursor: pointer;
 }
 
 .tabs {
@@ -548,6 +559,7 @@ select {
     flex-direction: column;
     padding: 6px;
     gap: 8px;
+    overflow-x: hidden;
   }
 
   .topbar,
@@ -558,7 +570,10 @@ select {
   }
 
   .topbar {
-    order: 2;
+    order: 4;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     position: static;
     align-items: stretch;
     gap: 8px;
@@ -604,17 +619,26 @@ select {
 
   .workspace {
     order: 1;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     gap: 8px;
   }
 
   .canvas-stage {
     order: 1;
-    min-height: 74dvh;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 76dvh;
     border-radius: 10px;
   }
 
   .tools-panel {
     order: 2;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     gap: 10px;
     padding: 10px;
     border-radius: 10px;
@@ -622,6 +646,9 @@ select {
 
   .adjust-panel {
     order: 3;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     gap: 10px;
     padding: 10px;
     border-radius: 10px;
@@ -651,7 +678,7 @@ select {
   }
 
   .canvas-wrap {
-    min-height: 64dvh;
+    min-height: 67dvh;
     border-radius: 0 0 10px 10px;
     touch-action: none;
   }
@@ -668,32 +695,51 @@ select {
 
   .tool-grid {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 6px;
   }
 
   .tool {
-    min-height: 64px;
+    min-width: 0;
+    min-height: 76px;
     padding: 6px 4px;
-    font-size: 11px;
+    font-size: 16px;
     line-height: 1.05;
   }
 
   .tool-icon {
-    font-size: 18px;
+    font-size: 21px;
   }
 
   .control {
-    font-size: 14px;
-    gap: 7px 9px;
+    font-size: 16px;
+    gap: 9px 10px;
   }
 
   .control input {
-    min-height: 28px;
+    min-height: 38px;
+  }
+
+  .control input[type="range"] {
+    height: 38px;
+  }
+
+  .control input[type="range"]::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 999px;
+  }
+
+  .control input[type="range"]::-webkit-slider-thumb {
+    width: 28px;
+    height: 28px;
+    margin-top: -10px;
   }
 
   output {
-    min-width: 38px;
+    min-width: 46px;
     font-size: 14px;
   }
 
@@ -717,13 +763,15 @@ select {
 
   .tabs {
     position: static;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 4px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+    padding: 6px;
   }
 
   .tab {
-    min-height: 38px;
-    font-size: 12px;
+    min-height: 48px;
+    font-size: 15px;
+    font-weight: 800;
   }
 
   #curveCanvas {
@@ -732,10 +780,19 @@ select {
 
   .empty-state {
     inset: 12px;
+    gap: 12px;
   }
 
-  .empty-state h2 {
-    font-size: 26px;
+  .empty-upload {
+    min-height: 58px;
+    padding: 0 24px;
+    font-size: 20px;
+  }
+
+  .empty-state p {
+    max-width: 260px;
+    margin: 0 auto;
+    font-size: 13px;
   }
 }
 

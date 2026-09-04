@@ -97,8 +97,7 @@
             <canvas id="editorCanvas"></canvas>
             <div id="brushCursor" class="brush-cursor" hidden></div>
             <div id="emptyState" class="empty-state">
-              <div class="empty-face">^_^</div>
-              <h2>кинь сюда фото</h2>
+              <label class="empty-upload" for="fileInput">Загрузить фото</label>
               <p>JPG, PNG или WebP. Все работает локально на твоем компьютере.</p>
             </div>
           </div>
@@ -167,16 +166,10 @@
           </div>
 
           <div class="tab-panel" data-panel="selective">
-            <label class="select-block">
+            <label class="control">
               <span>Цвет для коррекции</span>
-              <select id="colorRange">
-                <option value="reds">Красные</option>
-                <option value="oranges">Оранжевые</option>
-                <option value="yellows">Желтые</option>
-                <option value="greens">Зеленые</option>
-                <option value="blues">Синие</option>
-                <option value="magentas">Пурпурные</option>
-              </select>
+              <output id="colorRangeValue">Красные</output>
+              <input id="colorRange" type="range" min="0" max="5" value="0" />
             </label>
             <label class="control">
               <span>Сдвиг оттенка</span>

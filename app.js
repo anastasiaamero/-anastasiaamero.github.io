@@ -87,6 +87,15 @@ const ranges = {
   magentas: [285, 340]
 };
 
+const colorRangeOptions = [
+  ["reds", "Красные"],
+  ["oranges", "Оранжевые"],
+  ["yellows", "Желтые"],
+  ["greens", "Зеленые"],
+  ["blues", "Синие"],
+  ["magentas", "Пурпурные"]
+];
+
 document.querySelectorAll(".tool").forEach((button) => {
   button.addEventListener("click", () => {
     state.tool = button.dataset.tool;
@@ -121,8 +130,10 @@ bindRange("strength", "strength", "strengthValue", false);
   bindRange(key, key, `${key}Value`, true);
 });
 
-document.querySelector("#colorRange").addEventListener("change", (event) => {
-  state.adjustments.colorRange = event.target.value;
+document.querySelector("#colorRange").addEventListener("input", (event) => {
+  const option = colorRangeOptions[Number(event.target.value)] || colorRangeOptions[0];
+  state.adjustments.colorRange = option[0];
+  document.querySelector("#colorRangeValue").textContent = option[1];
   state.adjustmentsDirty = true;
   requestAdjustmentRender();
 });
@@ -776,7 +787,7 @@ function requestRender() {
 
 function requestAdjustmentRender() {
   clearTimeout(state.adjustmentRenderTimer);
-  state.adjustmentRenderTimer = setTimeout(requestRender, 35);
+  state.adjustmentRenderTimer = setTimeout(requestRender, 120);
 }
 
 function applyPreviewAdjustments() {
@@ -970,8 +981,10 @@ function resetAdjustmentsOnly() {
   Object.keys(state.adjustments).forEach((key) => {
     state.adjustments[key] = defaultAdjustmentValue(key);
   });
-  document.querySelector("#colorRange").value = "reds";
+  document.querySelector("#colorRange").value = 0;
+  document.querySelector("#colorRangeValue").textContent = colorRangeOptions[0][1];
   document.querySelectorAll(".adjust-panel input[type='range']").forEach((input) => {
+    if (input.id === "colorRange") return;
     input.value = defaultAdjustmentValue(input.id);
     const output = document.querySelector(`#${input.id}Value`);
     if (output) output.textContent = input.value;
